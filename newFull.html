@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>新闻列表</title>
+	<link href="https://cdn.bootcss.com/normalize/7.0.0/normalize.min.css" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+	<style>
+		.waterFull{
+			max-width: 1600px;
+			margin: 0 auto;
+			position: relative;
+		}
+		.waterFull .item{
+			width: 300px;
+			position: absolute;
+			border: 1px solid #ccc;
+			box-shadow: 5px 5px 5px #ccc;
+			padding: 5px;
+			margin: 5px;
+			transition: all 0.5s; 
+			
+		}
+
+		.waterFull .item img{
+			width: 100%;
+		}
+		.item .title{
+			text-align: center;
+		}
+		
+	</style>
+	
+</head>
+<body>
+	<div class="waterFull">
+	</div>
+	
+
+	<script type="text/javascript">
+	
+		var waterFull = (function(){
+			var hArr,helf,$news,num;
+			var $box = $(".waterFull");
+			var newsPage = 1;
+			var timer,timer1;
+			var obj = {
+				init (){
+					obj.getData(12);
+				},
+				rander (){
+					hArr = [];
+					$news = $box.find(".item");
+					num = Math.floor($box.width()/$news.outerWidth(true));
+					helf = Math.floor(($box.width() - num*$news.outerWidth(true))/2);
+					
+					for(var i=0;i<num;i++){
+						hArr[i] = 0;
+					}
+
+					$news.each(function(index,e){
+						var minH = Math.min.apply(null,hArr);
+						var minIndex = hArr.indexOf(minH)
+						//console.log(hArr)
+						$(e).css({
+							top:hArr[minIndex],
+							left:minIndex*$(e).outerWidth(true)+helf
+						})
+						hArr[minIndex] += $(e).outerHeight(true);
+					})
+				},
+				isVisible ($node){ 
+					var wTop = $(window).scrollTop();
+					var wH = window.innerHeight;
+					if($node){
+						if(wH+wTop>$node.offset().top&&$node.offset().top>wTop){
+							return true ;
+						}else{
+							return false ;
+						}
+					}
+				},
+				addNews (news){
+					if(timer){clearTimeout(timer)}
+					timer = setTimeout(function(){
+						var string = ""; 
+						for(var i=0;i<news.count;i++){
+							string += 
+							`
+							<div class="item">
+							<a target="_blank" href="`+news.data[i].url+`">
+							<img src="`+news.data[i].img_url+`">
+							</a>
+							<h3 class="title">`+news.data[i].short_name+`</h3>
+							<p class="descript">`+news.data[i].short_intro+`</p>
+							</div>
+							`;
+						}
+						
+						$box.append(string);
+						obj.rander();
+						
+					},10)
+				},
+				getData (newsNum){
+					$.ajax({
+						url:"http://platform.sina.com.cn/slide/album_tech",
+						jsonp:"jsoncallback",
+						data:{
+							app_key: '1271687855',
+							num: newsNum,
+							page: newsPage
+						},
+						dataType:"jsonp"	
+					}).done(function(res){
+						if(res && res.status && res.status.code === "0"){
+							obj.addNews(res);	
+							newsPage++;
+						}else{
+							console.log("error")
+						}
+					})
+				},
+				full (){
+					if(timer){clearTimeout(timer);}
+					timer = setTimeout(function(){
+						if(obj.isVisible($news.eq(-1))){
+
+							obj.getData(4);
+						}
+					},100)
+					
+				}
+			}
+			return obj;
+		})()
+		
+		$(window).resize(function(event) {
+			waterFull.rander();
+		});
+		$(window).scroll(function(){
+			waterFull.full();
+		})
+		waterFull.init();
+
+	</script>
+</body>
+</html>
